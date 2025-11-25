@@ -2,44 +2,57 @@ import cv2
 import numpy as np
 import os
 
+def get_ref_coins():
+    ref_coins = {}
+    for file in os.listdir('coins/'):
+        if file.endswith('.jpg'):
+            coin_name = file[:-8]  # Remove 'cara.jpg' or 'coroa.jpg'
+            if coin_name not in ref_coins:
+                ref_coins[coin_name] = []
+            img = cv2.imread(os.path.join('coins/', file), cv2.IMREAD_GRAYSCALE)
+            ref_coins[coin_name].append(img)
+    return ref_coins
+
+def process_ref_coins(ref_coins):
+    processed_coins = {}
+    for coin_name, images in ref_coins.items():
+        processed_images = []
+        for img in images:
+            _, thresh = cv2.threshold(img, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+            thresh = cv2.GaussianBlur(thresh, (5, 5), 0)
+            if np.median(thresh) < 128:
+                thresh = cv2.bitwise_not(thresh)
+            binary_img = cv2.adaptiveThreshold(thresh, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                               cv2.THRESH_BINARY, 11, 2)
+            processed_images.append(binary_img)
+        processed_coins[coin_name] = processed_images
+    return processed_coins
+
+def extract_coin_features(image):
+    edges = cv2.Canny(image, 100, 200)
+    # Filter edges to keep only strong edges
+    strong_edges = cv2.threshold(edges, 150, 255, cv2.THRESH_BINARY)[1]
+    orb = cv2.ORB_create()
+    keypoints, descriptors = orb.detectAndCompute(strong_edges, None)
+    return keypoints, descriptors
+
 def main():
-    # Open images
-    img = cv2.imread('test_images/test1.jpg', cv2.IMREAD_COLOR_BGR)
-    fivecentscara = cv2.imread('coins/5centscara.jpg', cv2.IMREAD_GRAYSCALE)
-    fivecentscoroa = cv2.imread('coins/5centscoroa.jpg', cv2.IMREAD_GRAYSCALE)
-    fivecents = (fivecentscara, fivecentscoroa)
+    ref_coins = get_ref_coins()
+    processed_coins = process_ref_coins(ref_coins)
 
-    tencentscara = cv2.imread('coins/10centscara.jpg', cv2.IMREAD_GRAYSCALE)
-    tencentscoroa = cv2.imread('coins/10centscoroa.jpg', cv2.IMREAD_GRAYSCALE)
-    tencents = (tencentscara, tencentscoroa)
-
-    tfivecentscara = cv2.imread('coins/25centscara.jpg', cv2.IMREAD_GRAYSCALE)
-    tfivecentscoroa = cv2.imread('coins/25centscoroa.jpg', cv2.IMREAD_GRAYSCALE)
-    tfivecents = (tfivecentscara, tfivecentscoroa)
-
-    fftcentscara = cv2.imread('coins/50centscara.jpg', cv2.IMREAD_GRAYSCALE)
-    fftcentscoroa = cv2.imread('coins/50centscoroa.jpg', cv2.IMREAD_GRAYSCALE)
-    fftcents = (fftcentscara, fftcentscoroa)
-
-    onercara = cv2.imread('coins/1realcara.jpg', cv2.IMREAD_GRAYSCALE)
-    onercoroa = cv2.imread('coins/1realcoroa.jpg', cv2.IMREAD_GRAYSCALE)
-    oner = (onercara, onercoroa)
-
-    ref_coins = {
-        "5cents": fivecents,
-        "10cents": tencents,
-        "25cents": tfivecents,
-        "50cents": fftcents,
-        "1real": oner
-    }
-
-
-    cv2.imshow('output', img)
-
-    teste = cv2.HoughCircles(onercara, cv2.HOUGH_GRADIENT, 1, 20, param1=50, param2=30, minRadius=0, maxRadius=0)
-    cv2.imshow('output2', teste)
+    for coin_name, images in processed_coins.items():
+        for idx, img in enumerate(images):
+            keypoints, descriptors = extract_coin_features(img)
+            img = cv2.drawKeypoints(img, keypoints, None, color=(0,255,0), flags=0)
+            window_name = f"{coin_name} - Image {idx+1}"
+            cv2.imshow(window_name, img)
 
 if __name__ == "__main__":
     main()
-    cv2.waitKey(0)
+    while True:
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord("n"):
+            break
+        if key == ord("q"):
+            os._exit(0)
     cv2.destroyAllWindows()
