@@ -23,7 +23,7 @@ def extract_coin_features(image):
     mag = cv2.magnitude(grad, grad)
     mag = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
     dir = cv2.phase(grad, grad, angleInDegrees=True)
-    
+
     # Rotate the magnitude to the maximum gradient direction
     mean_dir = np.mean(dir[mag > np.percentile(mag, 90)])
     rot_mat = cv2.getRotationMatrix2D(( image.shape[1] / 2, image.shape[0] / 2), mean_dir, 1)
@@ -34,9 +34,12 @@ def extract_coin_features(image):
 def process_coin_image(img):
     
     # Image processing steps here
-    blurred = cv2.GaussianBlur(img, (7, 7), 0)
     img = img ** 0.7
-    img = 0.9*img + 0.3*(img - blurred)
+    blurred = cv2.GaussianBlur(img, (7, 7), 0)
+    details = img - blurred
+    details = cv2.normalize(details, None, -1, 1, cv2.NORM_MINMAX)
+    sharped = cv2.addWeighted(img, 0.9, details, 0.7, 0)
+    img = cv2.normalize(sharped, None, 0, 1, cv2.NORM_MINMAX)
 
     return img
 
@@ -71,13 +74,31 @@ def align_coins(test_coin, ref_coin):
     test_coin_mag, test_coin_dir = test_coin
     ref_coin_mag, ref_coin_dir = ref_coin
 
-    mean_dir_ref = np.mean(ref_coin_dir[ref_coin_mag > np.percentile(ref_coin_mag, 90)])
-    mean_dir_test = np.mean(test_coin_dir[test_coin_mag > np.percentile(test_coin_mag, 90)])
-    mean_dir = mean_dir_ref - mean_dir_test
-    rot_mat = cv2.getRotationMatrix2D(( test_coin_mag.shape[1] / 2, test_coin_mag.shape[0] / 2), mean_dir, 1)
-    aligned_mag = cv2.warpAffine(test_coin_mag, rot_mat, (test_coin_mag.shape[1], test_coin_mag.shape[0]))
+    orb = cv2.ORB_create(500)
+    (kp1, des1) = orb.detectAndCompute(test_coin_mag, None)
+    (kp2, des2) = orb.detectAndCompute(ref_coin_mag, None)
 
-    return aligned_mag, test_coin_dir
+    method = cv2.DESCRIPTOR_MATCHER_BRUTEFORCE_HAMMING
+    matcher = cv2.DescriptorMatcher_create(method)
+    matches = matcher.match(des1, des2, None)
+
+    matches = sorted(matches, key=lambda x: x.distance)
+    matches = matches[:int(len(matches) * 0.9)]
+
+    ptsA = np.zeros((len(matches), 2), dtype="float")
+    ptsB = np.zeros((len(matches), 2), dtype="float")
+
+    for (i, m) in enumerate(matches):
+        ptsA[i] = kp1[m.queryIdx].pt
+        ptsB[i] = kp2[m.trainIdx].pt
+
+    (H, _) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC, 4.0)
+
+    (h, w) = ref_coin_mag.shape
+    aligned_mag = cv2.warpPerspective(test_coin_mag, H, (w, h))
+    aligned_dir = cv2.warpPerspective(test_coin_dir, H, (w, h))
+
+    return aligned_mag, aligned_dir
 
 def main():
     ref_coins = get_ref_coins()
@@ -87,6 +108,7 @@ def main():
         for idx, img in enumerate(images):
             processed_img = process_coin_image(img)
             mag, dir = extract_coin_features(processed_img)
+            mag = process_coin_image(mag.astype(np.float32) / 255.0)
             ref_features[coin_name][idx] = (mag.astype(np.uint8), dir.astype(np.uint8))
             #cv2.imshow(f'{coin_name} - Image {idx+1}', mag)
             #cv2.imshow(f'Ref {coin_name} Image {idx+1}', img)
@@ -99,23 +121,30 @@ def main():
 
     for idx, coin in enumerate(coins):
         processed_coin = process_coin_image(coin.astype(np.float32) / 255.0)
-        test_coin_features = extract_coin_features(processed_coin)
+        cv2.imshow(f'Processed Test Coin {idx+1}', processed_coin)
+        test_coin_features = extract_coin_features(coin.astype(np.float32) / 255.0)
+        cv2.imshow(f'Test Coin {idx+1}', test_coin_features[0])
+        #test_coin_features = process_coin_image(test_coin_features[0].astype(np.float32) / 255.0), test_coin_features[1]
 
         # Compare to reference features
         maior = (0, ('', -1))  # (correlation, (coin_name, ref_idx))
         for ref_coin_name, ref_coin_features in ref_features.items():
             for ref_idx, ref_coin_feature in ref_coin_features.items():                    
-                # Simple comparison
-                test_coin_features = align_coins(test_coin_features, ref_coin_feature)
-                correlation = np.corrcoef(test_coin_features[0].flatten(), ref_coin_feature[0].flatten())[0, 1]
-                
-                if correlation > maior[0]:
-                    maior = (correlation, (ref_coin_name, ref_idx))
+                for rot in range(0, 360, 10):
+                    # Rotate test coin features
+                    rot_mat = cv2.getRotationMatrix2D(( test_coin_features[0].shape[1] / 2, test_coin_features[0].shape[0] / 2), rot, 1)
+                    mag = cv2.warpAffine(test_coin_features[0], rot_mat, (test_coin_features[0].shape[1], test_coin_features[0].shape[0]))
+                    # Simple comparison
 
-                print(f'Coin {idx+1} vs {ref_coin_name} Image {ref_idx+1}: Correlation = {correlation:.4f}')
+                    correlation = np.corrcoef(mag.flatten(), ref_coin_feature[0].flatten())[0, 1]
+                    
+                    if correlation > maior[0]:
+                        maior = (correlation, (ref_coin_name, ref_idx))
+
+                    #print(f'Coin {idx+1} vs {ref_coin_name} with rotation of {rot} Image {ref_idx+1}: Correlation = {correlation:.4f}')
         
         print(f'Best match for Coin {idx+1}: {maior[1][0]} Image {maior[1][1]+1} with Correlation = {maior[0]:.4f}')
-        cv2.imshow(f'Coin {idx+1} vs {maior[1][0]} Image {maior[1][1]+1}', test_coin_features[0])
+        #cv2.imshow(f'Coin {idx+1} vs {maior[1][0]} Image {maior[1][1]+1}', mag)
 
 
 if __name__ == "__main__":
