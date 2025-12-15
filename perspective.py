@@ -19,11 +19,11 @@ def correct_perspective(in_img):
   man_img = cv2.GaussianBlur(man_img, (5, 5), 0)
   man_img = cv2.adaptiveThreshold(man_img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
   man_img = 255-man_img
-  cv2.imshow('ADAPTATIVE THRESH', man_img)    
+  #cv2.imshow('ADAPTATIVE THRESH', man_img)    
 
   # Remove noise
   man_img = cv2.morphologyEx(man_img, cv2.MORPH_OPEN, (3, 3))
-  cv2.imshow('OPEN IMAGE', man_img)
+  #cv2.imshow('OPEN IMAGE', man_img)
 
   # Fill insides of coins
   man_img = man_img.copy()
@@ -32,11 +32,11 @@ def correct_perspective(in_img):
   
   # Normalize
   man_img = cv2.normalize(man_img, None, 0, 255, cv2.NORM_MINMAX)
-  cv2.imshow('OPEN IMAGE BLUR NORM', man_img)
+  #cv2.imshow('OPEN IMAGE BLUR NORM', man_img)
 
   # Thresh
   ret, man_img = cv2.threshold(man_img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-  cv2.imshow('OTSU_IMG', man_img)
+  #cv2.imshow('OTSU_IMG', man_img)
 
   #Find coins ellipses
   contours, hierarchy = cv2.findContours(man_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -45,9 +45,9 @@ def correct_perspective(in_img):
     if(len(contour) >= 5):
       ellipse = cv2.fitEllipse(contour)
       cv2.ellipse(mask, ellipse, (255, 255, 255), -1)
-  cv2.imshow("MASK", mask)
+  #cv2.imshow("MASK", mask)
   in_img = in_img*mask
-  cv2.imshow("MASK_in", in_img)
+  #cv2.imshow("MASK_in", in_img)
 
   #Find any ellipse to transform
   ellipses = []
@@ -91,7 +91,7 @@ def correct_perspective(in_img):
 
     transform = cv2.getPerspectiveTransform(points, points_adjusted) 
     img_transformed = cv2.warpPerspective(in_img,transform,(501, 501))
-    cv2.imshow('Transformed'+str(index), img_transformed)
+    #cv2.imshow('Transformed'+str(index), img_transformed)
     images.append(img_transformed)
   return images
 
