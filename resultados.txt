@@ -1,0 +1,53 @@
+Dataset Coins
+    TESTE1: 4/10
+    TESTE2: 4/10
+    TESTE3: 4/10
+    TESTE4: 2/10
+    TESTE5: 5/10
+    TESTE6: 5/10
+    TESTE7: 6/10
+    TESTE8: 6/10
+    TESTE9: 7/10
+    TESTE10: 7/9 detectou duas moedas de 1 real como uma.
+    TESTE11: 5/5
+    TESTE12: 5/5
+Dataset Ref_coins
+    TESTE1: 7/10
+    TESTE2: 6/10
+    TESTE3: 6/10
+    TESTE4: 6/10
+    TESTE5: 8/10
+    TESTE6: 5/10
+    TESTE7: 5/10
+    TESTE8: 6/10
+    TESTE9: 8/10
+    TESTE10: 3/9 detectou duas moedas de 1 real como uma.
+    TESTE11: 4/5
+    TESTE12: 3/5
+Dataset Ref_coins com 50 cents emprestada
+    TESTE1: 7/10
+    TESTE2: 5/10
+    TESTE3: 7/10
+    TESTE4: 7/10
+    TESTE5: 9/10
+    TESTE6: 5/10
+    TESTE7: 6/10
+    TESTE8: 7/10
+    TESTE9: 9/10
+    TESTE10: 5/9 detectou duas moedas de 1 real como uma.
+    TESTE11: 3/5
+    TESTE12: 4/5
+    TOTAL: 74/109
+Dataset Ref_coins com 50 e 10cara emprestados
+    TESTE1: 7/10
+    TESTE2: 4/10
+    TESTE3: 6/10
+    TESTE4: 7/10
+    TESTE5: 9/10
+    TESTE6: 5/10
+    TESTE7: 6/10
+    TESTE8: 5/10
+    TESTE9: 8/10
+    TESTE10: 5/9
+    TESTE11: 3/5
+    TESTE12: 4/5

@@ -12,7 +12,7 @@ def get_ref_coins():
             coin_name = file[:-8]  # Remove 'cara.jpg' or 'coroa.jpg'
             if coin_name not in ref_coins:
                 ref_coins[coin_name] = []
-            img = cv2.imread(os.path.join('coins/', file), cv2.IMREAD_GRAYSCALE)
+            img = cv2.imread(os.path.join('ref_coins/', file), cv2.IMREAD_GRAYSCALE)
             img = img.astype(np.float32) / 255.0
             img = cv2.resize(img, (RESIZE_DIM, RESIZE_DIM))
             ref_coins[coin_name].append(img)
@@ -36,7 +36,7 @@ def process_coin_image(img):
     blurred = cv2.GaussianBlur(img, (3, 3), 0)
     details = img - blurred
     details = cv2.normalize(details, None, -1, 1, cv2.NORM_MINMAX)
-    sharped = cv2.addWeighted(img, 0.9, details, 0.4, 0)
+    sharped = cv2.addWeighted(img, 1.0, details, 0.4, 0)
     img = cv2.normalize(sharped, None, 0, 1, cv2.NORM_MINMAX)
 
     return img
@@ -67,10 +67,10 @@ def separate_coins(img):
 
     return coins
 
-def main():
+def main(file_path):
     ref_coins = get_ref_coins()
 
-    test_img = cv2.imread('test_images/perspective_4.jpg')
+    test_img = cv2.imread(file_path)
     
     coins, ellipses, img_draw = correct_perspective(test_img)
 
@@ -118,7 +118,7 @@ def main():
                 match = np.corrcoef(h.flatten(), ref_h.flatten())[0, 1]
                 if match > best_match[0]:
                     best_match = (match, coin_name)
-        cv2.imshow(f"Coin {idx+1}", coin)
+        #cv2.imshow(f"Coin {idx+1}", coin)
         print(f"Coin {idx+1}: Detected as {best_match[1]} with score {best_match[0]}")
 
         if best_match[1] in name_value:
@@ -132,16 +132,24 @@ def main():
         label = best_match[1]
         cv2.putText(img_draw, f"{label}", (text_x, text_y), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+    cv2.putText(img_draw, f"Total: R$ {total:.2f}", (10, 30), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
     print(f"Total value of coins: R$ {total:.2f}")
     cv2.imshow("Result", img_draw)
 
 if __name__ == "__main__":
-    main()
-    while True:
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord("n"):
-            break
-        if key == ord("q"):
-            os._exit(0)
-    cv2.destroyAllWindows()
+    for file in os.listdir('test_images/'):
+        if file.endswith('.jpg'):
+            if file not in ['TESTE4.jpg', 'TESTE9.jpg']:
+                continue
+            print(f"Processing image: {file}")
+            main(os.path.join('test_images/', file))
+            print("Press 'n' to process next image or 'q' to quit.")
+            while True:
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord("n"):
+                    break
+                if key == ord("q"):
+                    os._exit(0)
+            cv2.destroyAllWindows()

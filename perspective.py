@@ -40,16 +40,16 @@ def correct_perspective(in_img):
   ret, man_img = cv2.threshold(man_img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
   #cv2.imshow('OTSU_IMG', man_img)
 
-  #Find coins ellipses
+  # Find coins ellipses
   contours, hierarchy = cv2.findContours(man_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   mask = 255*np.zeros(man_img.shape[:2], dtype=np.uint8) 
   for contour in contours:
     if(len(contour) >= 5):
       ellipse = cv2.fitEllipse(contour)
       cv2.ellipse(mask, ellipse, (255, 255, 255), -1)
-  #cv2.imshow("MASK", mask)
+  cv2.imshow("MASK", mask)
   in_img = in_img*mask
-  #cv2.imshow("MASK_in", in_img)
+  cv2.imshow("MASK_in", in_img)
 
   #Find any ellipse to transform
   ellipses = []
@@ -85,15 +85,15 @@ def correct_perspective(in_img):
       [x+minor_axis_size*math.sin(angle)/2, y-minor_axis_size*math.cos(angle)/2],
     ])
     
-    # cv2.circle(in_img, (int(x), int(y)), 2, (0, 255, 0), -1)
-    # for point in points:
-    #   cv2.circle(in_img, (int(point[0]), int(point[1])), 2, (255, 0, 0), -1)
-    # cv2.imshow("Points", in_img)
-    # cv2.waitKey(0)
+    """ cv2.circle(in_img, (int(x), int(y)), 2, (0, 255, 0), -1)
+    for point in points:
+      cv2.circle(in_img, (int(point[0]), int(point[1])), 2, (255, 0, 0), -1)
+    cv2.imshow("Points", in_img)
+    cv2.waitKey(0) """
 
     transform = cv2.getPerspectiveTransform(points, points_adjusted) 
     img_transformed = cv2.warpPerspective(in_img,transform,(501, 501))
-    #cv2.imshow('Transformed'+str(index), img_transformed)
+    cv2.imshow('Transformed'+str(index), img_transformed)
     images.append(img_transformed)
   return images, ellipses, out_img
 
