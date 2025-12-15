@@ -5,22 +5,25 @@ import math
 
 FILENAME = "test_images/perspective_3.jpg"
 
-def main():
+def correct_perspective(img_bgr):
   # READ IMAGE
-  img_bgr = cv2.imread(FILENAME)
+  #img_bgr = cv2.imread(FILENAME)
   img_bgr = cv2.resize(img_bgr, (0, 0), fx=.3, fy=.3);
   img_bgr_out = img_bgr.copy()
-  img_blur_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+  if len(img_bgr.shape) == 3:
+    img_blur_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+  else:
+    img_blur_gray = img_bgr.copy()
 
   # Thresh
   img_blur = cv2.GaussianBlur(img_blur_gray, (5, 5), 0)
   adaptative_thresh = cv2.adaptiveThreshold(img_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 5, 2)
   adaptative_thresh = 255-adaptative_thresh
-  cv2.imshow('ADAPTATIVE THRESH', adaptative_thresh)    
+  #cv2.imshow('ADAPTATIVE THRESH', adaptative_thresh)    
 
   # Gaps
   img_open = cv2.morphologyEx(adaptative_thresh, cv2.MORPH_OPEN, (3, 3))
-  cv2.imshow('OPEN IMAGE', img_open)
+  #cv2.imshow('OPEN IMAGE', img_open)
 
   # Blur again
   open_img_blur = img_open.copy()
@@ -29,11 +32,11 @@ def main():
   
   # Normalize
   open_img_blur_norm = cv2.normalize(open_img_blur, None, 0, 255, cv2.NORM_MINMAX)
-  cv2.imshow('OPEN IMAGE BLUR NORM', open_img_blur_norm)
+  #cv2.imshow('OPEN IMAGE BLUR NORM', open_img_blur_norm)
 
   # Thresh
   ret, thresh_otsu = cv2.threshold(open_img_blur_norm, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-  cv2.imshow('OTSU_IMG', thresh_otsu)
+  #cv2.imshow('OTSU_IMG', thresh_otsu)
 
   contours, hierarchy = cv2.findContours(thresh_otsu, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   # cv2.drawContours(img_bgr_out, contours, -1, (0,0,255), 5)
@@ -86,19 +89,20 @@ def main():
   cv2.circle(img_bgr_draw, (int(x), int(y)), 3, (255, 0, 255), -1)
   for index, point in enumerate(points):
     cv2.circle(img_bgr_draw, np.int32(point), 3, (255, 0, 0), -1)
-    cv2.imshow('Contours', img_bgr_draw)
-    cv2.waitKey(0)    
+    #cv2.imshow('Contours', img_bgr_draw)
+    #cv2.waitKey(0)    
   for index, point in enumerate(points_adjusted):
     cv2.circle(img_bgr_draw, np.int32(point), 3, (0, 0, 255), -1)
-    cv2.imshow('Contours', img_bgr_draw)
-    cv2.waitKey(0)    
-  cv2.imshow('Contours', img_bgr_draw)
+    #cv2.imshow('Contours', img_bgr_draw)
+    #cv2.waitKey(0)    
+  #cv2.imshow('Contours', img_bgr_draw)
 
   transform = cv2.getPerspectiveTransform(points, points_adjusted) 
   img_transformed = cv2.warpPerspective(img_bgr_out,transform,(900, 900))
-  cv2.imshow('Transformed', img_transformed)
+  #cv2.imshow('Transformed', img_transformed)
+  return img_transformed
 
 if __name__ == "__main__":
-    main()
+    correct_perspective()
     cv2.waitKey(0)
     cv2.destroyAllWindows()
