@@ -70,11 +70,12 @@ def separete_coins(img):
 def main():
     ref_coins = get_ref_coins()
 
-    test_img = cv2.imread('test_images/testseilaqual.jpg', cv2.IMREAD_GRAYSCALE)
+    test_img = cv2.imread('test_images/perspective_4.jpg', cv2.IMREAD_GRAYSCALE)
 
-    #test_img = correct_perspective(test_img)
-    
-    coins = separete_coins(test_img)
+    coins = correct_perspective(test_img)
+    for i in range(len(coins)):
+        coins[i] = cv2.resize(coins[i], (100, 100))
+    # coins = separete_coins(test_img)
 
     winSize = (64, 64)
     blockSize = (16, 16)
@@ -91,7 +92,7 @@ def main():
             for rot in range(0, 360, 10):
                 M = cv2.getRotationMatrix2D((RESIZE_DIM/2, RESIZE_DIM/2), rot, 1)
                 img_rotated = cv2.warpAffine(img, M, (RESIZE_DIM, RESIZE_DIM))
-                img_rotated = process_coin_image(img_rotated)
+                # img_rotated = process_coin_image(img_rotated)
                 h = hog.compute((img_rotated * 255).astype(np.uint8))
                 hog_ref_features[coin_name].append(h)
     
@@ -100,7 +101,7 @@ def main():
         best_match = (-1, None)
         for coin_name, features in hog_ref_features.items():
             for ref_h in features:
-                coin = process_coin_image(coin)
+                # coin = process_coin_image(coin)
                 match = np.corrcoef(h.flatten(), ref_h.flatten())[0, 1]
                 if match > best_match[0]:
                     best_match = (match, coin_name)
