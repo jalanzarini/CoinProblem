@@ -116,7 +116,7 @@ def main():
         cv2.putText(img_draw, f"{label}", (text_x, text_y), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
             
-            cv2.imshow("Result", img_draw)
+    cv2.imshow("Result", img_draw)
 
 
 
