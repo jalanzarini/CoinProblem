@@ -41,7 +41,7 @@ def process_coin_image(img):
 
     return blurred
 
-def separete_coins(img):
+def separate_coins(img):
     coins = []
     img_copy = img.copy()
     img_copy = cv2.cvtColor(img_copy, cv2.COLOR_GRAY2BGR)
@@ -70,12 +70,11 @@ def separete_coins(img):
 def main():
     ref_coins = get_ref_coins()
 
-    test_img = cv2.imread('test_images/perspective_4.jpg', cv2.IMREAD_GRAYSCALE)
-
-    coins = correct_perspective(test_img)
+    test_img = cv2.imread('test_images/perspective_4.jpg')
+    
+    coins, ellipses, img_draw = correct_perspective(test_img)
     for i in range(len(coins)):
         coins[i] = cv2.resize(coins[i], (100, 100))
-    # coins = separete_coins(test_img)
 
     winSize = (64, 64)
     blockSize = (16, 16)
@@ -108,6 +107,16 @@ def main():
         cv2.imshow(f"Coin {idx+1}", coin)
         print(f"Coin {idx+1}: Detected as {best_match[1]} with score {best_match[0]}")
 
+        ellipse = ellipses[idx]
+        cv2.ellipse(img_draw, ellipse, (0, 255, 0), 2)
+        center_x, center_y = int(ellipse[0][0]), int(ellipse[0][1])
+        text_x = center_x - 30
+        text_y = int(center_y - max(ellipse[1])/2)
+        label = best_match[1]
+        cv2.putText(img_draw, f"{label}", (text_x, text_y), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            
+            cv2.imshow("Result", img_draw)
 
 
 

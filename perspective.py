@@ -7,8 +7,10 @@ FILENAME = "test_images/perspective_4.jpg"
 
 def correct_perspective(in_img):
   #Convert to grayscale
+  out_img = in_img.copy()
   if in_img.shape[0] > 1000 or in_img.shape[1] > 1000:
     in_img = cv2.resize(in_img, (0, 0), fx=.3, fy=.3)
+    out_img = cv2.resize(out_img, (0, 0), fx=.3, fy=.3)
   if len(in_img.shape) == 3:
     in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2GRAY)
   else:
@@ -93,7 +95,7 @@ def correct_perspective(in_img):
     img_transformed = cv2.warpPerspective(in_img,transform,(501, 501))
     cv2.imshow('Transformed'+str(index), img_transformed)
     images.append(img_transformed)
-  return images
+  return images, ellipses, out_img
 
 if __name__ == "__main__":
   in_img = cv2.imread(FILENAME)
